@@ -179,7 +179,7 @@ public class Monitor_Training : MonoBehaviour
         else
             setWeights(0, 0, 0, 0, true);
         setSliderValues(true);
-        setInteractionObjects();
+        //setInteractionObjects();
         updateText();
         //Change interaction objects and ewards every "changePhaseInterval" seconds
         InvokeRepeating("newPhase", changePhaseInterval, changePhaseInterval);
@@ -362,7 +362,7 @@ public class Monitor_Training : MonoBehaviour
         this.phase++;
         if (this.randomToggle.isOn)
             setWeights(0, 0, 0, 0, true);
-        setInteractionObjects();
+        //setInteractionObjects();
         updateText();
         setSliderValues(false);
     }
@@ -439,6 +439,7 @@ public class Monitor_Training : MonoBehaviour
     }
 
     //At every phase initialize a subset of objects as interaction
+    /*
     private void setInteractionObjects()
     {
         if (this.setAllInteraction)
@@ -466,6 +467,7 @@ public class Monitor_Training : MonoBehaviour
         }
         this.interactionSet = true;
     }
+    \*/
 
     //Find goal and spawn areas in scene
     private void initializeGoalAreas()

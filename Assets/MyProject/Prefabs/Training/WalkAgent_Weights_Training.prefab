@@ -441,13 +441,16 @@ MonoBehaviour:
   turnSpeed: 150
   moveSpeed: 0.15
   currentGoalDistance: 0
-  currentAngle: 0
+  currentSubGoalDistance: 0
+  currentAngleMG: 0
+  currentAngleSG: 0
   reward: 0
   closestAgent: {fileID: 0}
   closestAgentID: 0
   closeAgents: 0
   initial: 1
   goalWeight: 0
+  subgoalWeight: 0
   collWeight: 0
   groupWeight: 0
   interWeight: 0
@@ -862,7 +865,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6422307833335029543}
-  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -885,7 +888,8 @@ MonoBehaviour:
   m_DetectableTags:
   - AgentCollider
   - Obstacle
-  - Interaction
+  - Positive
+  - Negative
   m_RaysPerDirection: 15
   m_MaxRayDegrees: 180
   m_SphereCastRadius: 0

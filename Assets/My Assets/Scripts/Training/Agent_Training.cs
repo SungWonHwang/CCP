@@ -16,11 +16,16 @@ public class Agent_Training : Agent
     private Rigidbody AgentRb;
     private Vector3 startingPos;
     private Vector3 goalPos;
+    private Vector3 subgoalPos;//+
     private float goalDistance;
+    private float subgoalDistance;
     [Header("Reward Parameters")]
     public float currentGoalDistance;
-    public float currentAngle;
+    public float currentSubGoalDistance;//+
+    public float currentAngleMG;
+    public float currentAngleSG;//+
     private Vector3 goalVector;
+    private Vector3 subgoalVector;//+
     private int stillCounter;
     private int rotationCounter;
     //General Parameters
@@ -43,6 +48,7 @@ public class Agent_Training : Agent
     private int countEpisode;
     private int localPhase = 1;
     public float goalWeight;
+    public float subgoalWeight;
     public float collWeight;
     public float groupWeight;
     public float interWeight;
@@ -107,6 +113,7 @@ public class Agent_Training : Agent
         }
         transform.GetComponent<TrailRenderer>().Clear();
         this.goalDistance = Vector3.Distance(transform.position, this.goalPos);
+        this.subgoalDistance = 0;
         this.stillCounter = 0;
     }
 
@@ -246,6 +253,7 @@ public class Agent_Training : Agent
             Destroy(this.gameObject);
         }
         this.reward = GetCumulativeReward();
+        //CheckSubGoal();
     }
 
     // If GridSpawn is enabled, return points in 2d grid
@@ -365,7 +373,7 @@ public class Agent_Training : Agent
         //Goal
         float normalized_goalDistance = normalizeInRange(this.currentGoalDistance, 0, this.manager.maxDistance);
         sensor.AddObservation(normalized_goalDistance); // 1
-        sensor.AddObservation(this.currentAngle); // 1
+        sensor.AddObservation(this.currentAngleMG); // 1
 
         //Weights
         float normalized_collision = normalizeInRange(this.collWeight, this.manager.collMin, this.manager.collMax);
@@ -502,12 +510,18 @@ public class Agent_Training : Agent
     //Assign rewards to the agent 
     private void assignRewards()
     {
+        //MainGoal Parameter
         this.goalVector = this.goalPos - transform.position;
-
-        this.currentAngle = Vector3.Angle(transform.forward, goalVector);
+        this.currentAngleMG = Vector3.Angle(transform.forward, goalVector);
         this.currentGoalDistance = Vector3.Distance(transform.position, this.goalPos);
+        //SubGoal Parameter
+        this.subgoalVector = this.subgoalPos - transform.position;
+        this.currentAngleSG = Vector3.Angle(transform.forward, subgoalVector);
+         this.currentSubGoalDistance = Vector3.Distance(transform.position, this.subgoalPos);
 
-        //Goal Arrival Reward
+        //----------Main Goal Reward--------------
+        //여기 goalWeight를 감각 순응 처리하기~~~
+        //Dense : Goal Arrival Reward
         if (this.currentGoalDistance <= this.manager.goalDistanceThreshold)
         {
             AddReward(+1f * this.goalWeight);
@@ -515,8 +529,8 @@ public class Agent_Training : Agent
             EpisodeEnded();
         }
 
-        //Moving towards goal reward
-        if ((this.currentAngle <= 45f) && (this.currentGoalDistance < this.goalDistance))
+        //Goto or Not MainGoal : Moving towards goal reward
+        if ((this.currentAngleMG <= 45f) && (this.currentGoalDistance < this.goalDistance))
         {
             AddReward(+0.00075f * this.goalWeight);
             this.goalDistance = this.currentGoalDistance;
@@ -524,6 +538,29 @@ public class Agent_Training : Agent
         else
             AddReward(-0.00025f * this.goalWeight);
 
+        //Living Penalty : Add a negative reward to each step to make agent find its goal as fast as possible
+        AddReward(-0.00015f * this.goalWeight);
+
+        //----------SubGoalReward--------------
+        //여기 subGoalWeight를 감각 순응 처리하기~~~
+        //Dense : Sub Goal Arrival Reward
+        if (this.currentSubGoalDistance <= this.manager.goalDistanceThreshold)
+        {
+            AddReward(+1f * this.subgoalWeight);
+            Debug.Log("SubGoal");
+        }
+
+        //Goto or Not SubGoal : Moving towards goal reward
+        if ((this.currentAngleMG <= 45f) && (this.currentSubGoalDistance < this.subgoalDistance))
+        {
+            AddReward(+0.00075f * this.subgoalWeight);
+            this.subgoalDistance = this.currentSubGoalDistance;
+        }
+        else
+            AddReward(-0.00025f * this.subgoalWeight);
+
+        /*
+        //----------GroupReward--------------
         //Group reward
         getClosestAgent();
         float distanceToClosestAgent = this.manager.groupDistanceThreshold;
@@ -534,6 +571,7 @@ public class Agent_Training : Agent
         if (distanceToClosestAgent <= this.manager.groupDistanceThreshold && dot_group >= 0.7f && this.closeAgents <= this.manager.maxNeighbours)
             AddReward(+0.001f * this.groupWeight);
 
+        //----------InteractionReward--------------
         //Interacting with objects reward
         getClosestInteraction();
         float distanceToClosestInteraction = this.manager.interactionDistanceThreshold;
@@ -546,9 +584,7 @@ public class Agent_Training : Agent
         //if is agent is near to closed interaction object and looking towards it and there are less than maxNeighbours in a radius, give reward
         if (distanceToClosestInteraction <= this.manager.interactionDistanceThreshold && dot_interact >= 0.225f && this.closeAgents <= this.manager.maxNeighbours)
             AddReward(+0.001f * this.interWeight);
-
-        //Add a negative reward to each step to make agent find its goal as fast as possible
-        AddReward(-0.00015f * this.goalWeight);
+        */
     }
     
     private void EpisodeEnded()
@@ -589,7 +625,7 @@ public class Agent_Training : Agent
         }
         return center / count;
     }
-
+/*
     //Get the GameObject of closest agent
     private void getClosestAgent()
     {
@@ -650,6 +686,7 @@ public class Agent_Training : Agent
         }
         this.closestInteraction = objectMin;
     }
+    */
 
     //Runs when colliders get triggered
     private void OnTriggerEnter(Collider other)
@@ -667,7 +704,7 @@ public class Agent_Training : Agent
             }
         }
         //Agent collide to an obstacle
-        if (other.tag == "Obstacle" || other.tag == "Interaction")
+        if (other.tag == "Obstacle" || other.tag == "Interaction" || other.tag == "Positive" || other.tag == "Negative" )
         {
             Debug.Log("Obstacle Collision");
             AddReward(-0.5f * this.collWeight);
